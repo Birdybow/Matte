@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Funksjoner – tabell, graf og funksjon</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #f4f1fb; color: #2b2340; font-size: 18px;
+  }
+  .ramme { max-width: 480px; margin: 0 auto; padding: 14px 14px 40px; }
+  .fremdrift { display: flex; gap: 6px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .prikk {
+    width: 28px; height: 28px; border-radius: 50%; background: #ddd6ee;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; color: #6b5e8a;
+  }
+  .prikk.aktiv { background: #7c5cd6; color: #fff; }
+  .prikk.ferdig { background: #2eaa6e; color: #fff; }
+  .kort {
+    background: #fff; border-radius: 18px; padding: 16px; margin-bottom: 14px;
+    box-shadow: 0 2px 10px rgba(60, 40, 120, .08);
+  }
+  h1 { font-size: 21px; margin: 0 0 6px; }
+  h2 { font-size: 18px; margin: 0 0 10px; color: #7c5cd6; }
+  .vare { font-size: 46px; text-align: center; margin: 4px 0; }
+  .historie { text-align: center; font-size: 19px; line-height: 1.4; }
+  .funksjonBoks { text-align: center; }
+  .funksjon {
+    display: inline-block; margin: 12px 0 4px; padding: 6px 18px; border-radius: 12px;
+    background: #efeaf9; color: #5a3fb8; font-size: 30px; font-weight: bold;
+  }
+  .forklaring { font-size: 15px; color: #6b5e8a; text-align: center; line-height: 1.5; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #efeaf9; padding: 8px; font-size: 15px; }
+  td { padding: 6px; text-align: center; border-bottom: 1px solid #eee; }
+  td.xverdi { font-size: 22px; font-weight: bold; color: #7c5cd6; }
+  input {
+    width: 90px; font-size: 22px; padding: 8px; text-align: center;
+    border: 2px solid #cfc5e8; border-radius: 10px; outline: none;
+  }
+  input:focus { border-color: #7c5cd6; }
+  input.riktig { border-color: #2eaa6e; background: #e6f7ee; }
+  input.feil { border-color: #e0534a; background: #fdecea; }
+  .hint {
+    min-height: 80px; margin-top: 10px; padding: 10px; border-radius: 12px;
+    background: #fff8e1; font-size: 18px; text-align: center; line-height: 1.6;
+  }
+  .ikoner { font-size: 24px; letter-spacing: 1px; }
+  .gruppe { display: inline-block; padding: 0 4px; margin: 2px; border: 2px dashed #e6b800; border-radius: 8px; }
+  .liten { font-size: 14px; color: #6b5e8a; }
+  .rutenett { display: inline-grid; gap: 2px; margin: 4px 0; }
+  .rute { width: 22px; height: 22px; border-radius: 4px; }
+  svg { width: 100%; height: auto; display: block; }
+  .sporsmal { margin: 10px 0 6px; line-height: 1.4; }
+  .svarlinje { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  button {
+    font-size: 17px; padding: 10px 14px; border: none; border-radius: 10px;
+    background: #efeaf9; color: #5a3fb8; font-weight: 600;
+  }
+  button.stor { width: 100%; background: #7c5cd6; color: #fff; font-size: 20px; padding: 14px; }
+  .tilbakemelding { min-height: 24px; margin-top: 6px; font-weight: 600; }
+  .gronn { color: #1f8a56; }
+  .rod { color: #c43d35; }
+  .skjult { display: none; }
+  .utregning { font-size: 26px; text-align: center; margin: 10px 0; }
+  .feiring { text-align: center; font-size: 40px; }
+</style>
+</head>
+<body>
+<div class="ramme">
+  <div class="fremdrift" id="fremdrift"></div>
+
+  <div class="kort">
+    <h1 id="tittel"></h1>
+    <div class="vare" id="vareIkon"></div>
+    <div class="historie" id="historie"></div>
+    <div class="funksjonBoks"><div class="funksjon" id="funksjonTekst"></div></div>
+    <div class="forklaring" id="forklaring"></div>
+  </div>
+
+  <div class="kort" style="background:#eef9f2;">
+    <h2 style="color:#1f8a56;">📋 Fremgangsmåte</h2>
+    <ol style="margin:0;padding-left:22px;line-height:1.6;">
+      <li><b>Tabell:</b> Bytt ut x med tallet. Regn ut y.</li>
+      <li><b>Graf:</b> Gå x bortover, så y opp. Sett en prikk.</li>
+      <li><b>Finn y:</b> Start på x. Gå <b>opp</b> til grafen, så <b>bort</b>.</li>
+      <li><b>Finn x:</b> Start på y. Gå <b>bort</b> til grafen, så <b>ned</b>.</li>
+    </ol>
+    <button style="width:100%;margin-top:12px;" onclick="visLosning()">📖 Vis løsningen</button>
+    <div id="losning" class="skjult" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- Steg 1: Tabell -->
+  <div class="kort">
+    <h2>1. Fyll ut tabellen</h2>
+    <table>
+      <thead><tr><th id="kolonneX"></th><th id="kolonneY"></th></tr></thead>
+      <tbody id="tabellKropp"></tbody>
+    </table>
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <!-- Graf -->
+  <div class="kort">
+    <h2>Grafen</h2>
+    <svg id="graf" viewBox="0 0 340 330"></svg>
+    <div id="grafTekst" class="forklaring"></div>
+  </div>
+
+  <!-- Steg 2: Les av grafen -->
+  <div class="kort skjult" id="stegAvlesning">
+    <h2>2. Les av grafen</h2>
+    <div class="sporsmal" id="sporsmal1Tekst"></div>
+    <div class="svarlinje">
+      y = <input id="svar1" inputmode="numeric" autocomplete="off">
+      <button onclick="visHjelpFraX()">Vis på grafen</button>
+    </div>
+    <div class="tilbakemelding" id="tilbakemelding1"></div>
+
+    <div class="sporsmal" id="sporsmal2Tekst" style="margin-top:16px;"></div>
+    <div class="svarlinje">
+      x = <input id="svar2" inputmode="numeric" autocomplete="off">
+      <button onclick="visHjelpFraY()">Vis på grafen</button>
+    </div>
+    <div class="tilbakemelding" id="tilbakemelding2"></div>
+  </div>
+
+  <!-- Steg 3: Bruk funksjonen -->
+  <div class="kort skjult" id="stegFunksjon">
+    <h2>3. Bruk funksjonen</h2>
+    <div class="sporsmal" id="funksjonSporsmal"></div>
+    <div class="utregning" id="funksjonUtregning"></div>
+    <div class="utregning">y = <input id="svarFunksjon" inputmode="numeric" autocomplete="off"></div>
+    <div class="tilbakemelding" id="tilbakemeldingFunksjon"></div>
+  </div>
+
+  <!-- Ferdig -->
+  <div class="kort skjult" id="stegFerdig">
+    <div class="feiring">⭐🎉⭐</div>
+    <p style="text-align:center;" id="ferdigTekst"></p>
+    <button class="stor" id="nesteKnapp" onclick="nesteOppgave()">Neste oppgave ➜</button>
+  </div>
+</div>
+
+<script>
+// type: "pluss"  -> y = x + b
+//       "ganger" -> y = a · x
+//       "gangerPluss" -> y = a · x + b
+//       "kvadrat" -> y = x · x = x²
+const oppgaver = [
+  { type: "pluss", b: 1, ikon: "🍬", tittel: "Godteri",
+    historie: "Du har <b>1</b> godteri.<br>Du får <b>1 nytt</b> hver dag.",
+    xNavn: "dager", yNavn: "godteri", sporX: 3, sporXFraY: 4 },
+  { type: "pluss", b: 2, ikon: "🌸", tittel: "Blomster",
+    historie: "Det står <b>2</b> blomster i vasen.<br>Du setter i <b>1 ny</b> hver dag.",
+    xNavn: "dager", yNavn: "blomster", sporX: 2, sporXFraY: 4 },
+  { type: "pluss", b: 3, ikon: "📚", tittel: "Bøker",
+    historie: "Du har <b>3</b> bøker.<br>Du låner <b>1 ny</b> hver uke.",
+    xNavn: "uker", yNavn: "bøker", sporX: 4, sporXFraY: 2 },
+  { type: "pluss", b: 4, ikon: "🐟", tittel: "Akvariet",
+    historie: "Det er <b>4</b> fisker i akvariet.<br>Det kommer <b>1 ny</b> hver uke.",
+    xNavn: "uker", yNavn: "fisker", sporX: 3, sporXFraY: 5 },
+  { type: "ganger", a: 2, ikon: "🧦", tittel: "Sokker",
+    historie: "Ett sokkepar er <b>2</b> sokker.",
+    xNavn: "par", yNavn: "sokker", sporX: 3, sporXFraY: 4 },
+  { type: "ganger", a: 2, ikon: "👟", tittel: "Skopar",
+    historie: "Ett skopar er <b>2</b> sko.",
+    xNavn: "par", yNavn: "sko", sporX: 4, sporXFraY: 2 },
+  { type: "gangerPluss", a: 2, b: 1, ikon: "🍪", tittel: "Kjeks",
+    historie: "Du har <b>1</b> kjeks.<br>Du baker <b>2 nye</b> hver dag.",
+    xNavn: "dager", yNavn: "kjeks", sporX: 2, sporXFraY: 4 },
+  { type: "kvadrat", farge: "#a78bfa", ikon: "🟪", tittel: "Kvadrat",
+    historie: "Et kvadrat har <b>x</b> ruter på hver side.<br>Hvor mange ruter er det til sammen?",
+    xNavn: "ruter på siden", yNavn: "ruter i alt", sporX: 3, sporXFraY: 4 },
+  { type: "kvadrat", farge: "#8b5a2b", ikon: "🍫", tittel: "Sjokoladeplate",
+    historie: "En sjokoladeplate har <b>x</b> biter på hver side.<br>Hvor mange biter er det til sammen?",
+    xNavn: "biter på siden", yNavn: "biter i alt", sporX: 4, sporXFraY: 2 },
+  { type: "kvadrat", farge: "#f59e0b", ikon: "🟧", tittel: "Fliser",
+    historie: "Et gulv har <b>x</b> fliser på hver side.<br>Hvor mange fliser er det til sammen?",
+    xNavn: "fliser på siden", yNavn: "fliser i alt", sporX: 2, sporXFraY: 5 }
+];
+
+function beregnY(oppgave, x) {
+  if (oppgave.type === "pluss") return x + oppgave.b;
+  if (oppgave.type === "ganger") return oppgave.a * x;
+  if (oppgave.type === "gangerPluss") return oppgave.a * x + oppgave.b;
+  return x * x;
+}
+
+function funksjonsuttrykk(oppgave) {
+  if (oppgave.type === "pluss") return `y = x + ${oppgave.b}`;
+  if (oppgave.type === "ganger") return `y = ${oppgave.a} · x`;
+  if (oppgave.type === "gangerPluss") return `y = ${oppgave.a} · x + ${oppgave.b}`;
+  return "y = x²";
+}
+
+// Regnestykket med x byttet ut med et tall
+function innsattUttrykk(oppgave, x) {
+  if (oppgave.type === "pluss") return `y = ${x} + ${oppgave.b}`;
+  if (oppgave.type === "ganger") return `y = ${oppgave.a} · ${x}`;
+  if (oppgave.type === "gangerPluss") return `y = ${oppgave.a} · ${x} + ${oppgave.b}`;
+  return `y = ${x} · ${x}`;
+}
+
+function forklaringTekst(oppgave) {
+  let tekst = `x = antall ${oppgave.xNavn} &nbsp;&nbsp; y = antall ${oppgave.yNavn}`;
+  if (oppgave.type === "kvadrat") tekst += `<br><b>x²</b> betyr <b>x · x</b>`;
+  return tekst;
+}
+
+// Tegning som viser regnestykket
+function tegning(oppgave, x) {
+  const ikon = oppgave.ikon;
+  if (oppgave.type === "kvadrat") {
+    if (x === 0) return `<div class="liten">Ingen ruter på siden → ingen ruter i alt</div>`;
+    let ruter = "";
+    for (let i = 0; i < x * x; i++) ruter += `<div class="rute" style="background:${oppgave.farge}"></div>`;
+    return `<div class="rutenett" style="grid-template-columns: repeat(${x}, 22px)">${ruter}</div>
+            <div class="liten">${x} rader med ${x} i hver</div>`;
+  }
+  const fraFor = oppgave.b ? ikon.repeat(oppgave.b) : "";
+  let nye = "";
+  if (oppgave.type === "pluss") {
+    nye = x === 0 ? "ingen" : ikon.repeat(x);
+  } else {
+    if (x === 0) nye = "ingen";
+    for (let i = 0; i < x; i++) nye += `<span class="gruppe">${ikon.repeat(oppgave.a)}</span>`;
+  }
+  let html = "";
+  if (oppgave.b) html += `<div><span class="liten">Fra før:</span> <span class="ikoner">${fraFor}</span></div>`;
+  html += `<div><span class="liten">${oppgave.b ? "Nye:" : ""}</span> <span class="ikoner">${nye}</span></div>`;
+  return html;
+}
+
+const lagringsnokkel = "funksjonTreningFerdige";
+let ferdigeOppgaver = [];
+try { ferdigeOppgaver = JSON.parse(localStorage.getItem(lagringsnokkel)) || []; } catch (e) { ferdigeOppgaver = []; }
+
+let gjeldendeIndeks = 0;
+let riktigeRader = [];
+
+// Grafgeometri
+const venstreKant = 50, hoyreKant = 320, toppKant = 20, bunnKant = 285;
+function maksY() { return beregnY(oppgaver[gjeldendeIndeks], 5); }
+function grafX(x) { return venstreKant + x * (hoyreKant - venstreKant) / 5; }
+function grafY(y) { return bunnKant - y * (bunnKant - toppKant) / maksY(); }
+
+function lagreFremdrift() {
+  try { localStorage.setItem(lagringsnokkel, JSON.stringify(ferdigeOppgaver)); } catch (e) {}
+}
+
+function tegnFremdrift() {
+  const beholder = document.getElementById("fremdrift");
+  beholder.innerHTML = "";
+  oppgaver.forEach((_, indeks) => {
+    const prikk = document.createElement("div");
+    prikk.className = "prikk";
+    if (ferdigeOppgaver.includes(indeks)) prikk.classList.add("ferdig");
+    if (indeks === gjeldendeIndeks) prikk.classList.add("aktiv");
+    prikk.textContent = ferdigeOppgaver.includes(indeks) ? "✓" : indeks + 1;
+    prikk.onclick = () => startOppgave(indeks);
+    beholder.appendChild(prikk);
+  });
+}
+
+function startOppgave(indeks) {
+  gjeldendeIndeks = indeks;
+  riktigeRader = [];
+  const oppgave = oppgaver[indeks];
+
+  document.getElementById("tittel").textContent = `Oppgave ${indeks + 1}: ${oppgave.tittel}`;
+  document.getElementById("vareIkon").textContent = oppgave.ikon;
+  document.getElementById("historie").innerHTML = oppgave.historie;
+  document.getElementById("funksjonTekst").textContent = funksjonsuttrykk(oppgave);
+  document.getElementById("forklaring").innerHTML = forklaringTekst(oppgave);
+  document.getElementById("kolonneX").textContent = `x (${oppgave.xNavn})`;
+  document.getElementById("kolonneY").textContent = `y (${oppgave.yNavn})`;
+  document.getElementById("hint").innerHTML = "Trykk i en rute for å få hjelp 👆";
+  document.getElementById("grafTekst").textContent = "Hvert riktig svar blir en prikk på grafen.";
+
+  const tabellKropp = document.getElementById("tabellKropp");
+  tabellKropp.innerHTML = "";
+  for (let x = 0; x <= 5; x++) {
+    const rad = document.createElement("tr");
+    rad.innerHTML = `<td class="xverdi">${x}</td><td><input id="celle${x}" inputmode="numeric" autocomplete="off"></td>`;
+    tabellKropp.appendChild(rad);
+    const felt = rad.querySelector("input");
+    felt.addEventListener("focus", () => visHint(x));
+    felt.addEventListener("input", () => sjekkCelle(x, false));
+    felt.addEventListener("blur", () => sjekkCelle(x, true));
+    felt.addEventListener("keydown", (hendelse) => { if (hendelse.key === "Enter") sjekkCelle(x, true); });
+  }
+
+  ["stegAvlesning", "stegFunksjon", "stegFerdig", "losning"].forEach(id => document.getElementById(id).classList.add("skjult"));
+  ["svar1", "svar2", "svarFunksjon"].forEach(id => {
+    const felt = document.getElementById(id);
+    felt.value = ""; felt.className = ""; felt.disabled = false;
+  });
+  ["tilbakemelding1", "tilbakemelding2", "tilbakemeldingFunksjon"].forEach(id => document.getElementById(id).textContent = "");
+
+  document.getElementById("sporsmal1Tekst").innerHTML =
+    `a) Hva er y når x = <b>${oppgave.sporX}</b>?<br><span class="liten">(${oppgave.sporX} ${oppgave.xNavn} → hvor mange ${oppgave.yNavn}?)</span>`;
+  document.getElementById("sporsmal2Tekst").innerHTML =
+    `b) Hva er x når y = <b>${beregnY(oppgave, oppgave.sporXFraY)}</b>?<br><span class="liten">(${beregnY(oppgave, oppgave.sporXFraY)} ${oppgave.yNavn} → hvor mange ${oppgave.xNavn}?)</span>`;
+  document.getElementById("funksjonSporsmal").innerHTML =
+    `Grafen stopper på 5. Hva er y når x = <b>10</b>?<br>Bytt ut x med 10:`;
+  document.getElementById("funksjonUtregning").textContent = innsattUttrykk(oppgave, 10);
+
+  tegnFremdrift();
+  tegnGraf();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function visHint(x) {
+  const oppgave = oppgaver[gjeldendeIndeks];
+  document.getElementById("hint").innerHTML =
+    `<div class="liten">x = ${x}</div>${tegning(oppgave, x)}<div><b>${innsattUttrykk(oppgave, x)} = ?</b></div>`;
+}
+
+function sjekkCelle(x, visFeil) {
+  const oppgave = oppgaver[gjeldendeIndeks];
+  const felt = document.getElementById("celle" + x);
+  const verdi = felt.value.trim();
+  if (verdi === "" || felt.disabled) { if (verdi === "") felt.className = ""; return; }
+
+  if (Number(verdi) === beregnY(oppgave, x)) {
+    riktigeRader.push(x);
+    felt.className = "riktig";
+    felt.disabled = true;
+    tegnGraf();
+    const nesteFelt = document.getElementById("celle" + (x + 1));
+    if (nesteFelt && !nesteFelt.disabled) nesteFelt.focus();
+    if (riktigeRader.length === 6) tabellFerdig();
+  } else if (visFeil) {
+    felt.className = "feil";
+    document.getElementById("hint").innerHTML =
+      `${tegning(oppgave, x)}<div class="rod">Ikke helt. Riktig svar:</div>
+       <div><b>${innsattUttrykk(oppgave, x)} = ${beregnY(oppgave, x)}</b></div>
+       <div class="liten">Skriv ${beregnY(oppgave, x)} i ruten.</div>`;
+  } else {
+    felt.className = "";
+  }
+}
+
+function tabellFerdig() {
+  const oppgave = oppgaver[gjeldendeIndeks];
+  const form = oppgave.type === "kvadrat" ? "en <b>bue</b> som blir brattere og brattere" : "en <b>rett linje</b>";
+  document.getElementById("hint").innerHTML = `✅ Hele tabellen er riktig!<br>Prikkene danner ${form}.`;
+  document.getElementById("grafTekst").innerHTML = `Grafen til ${funksjonsuttrykk(oppgave)}`;
+  tegnGraf();
+  document.getElementById("stegAvlesning").classList.remove("skjult");
+}
+
+// hjelpelinje = { x, y } gir stiplede linjer
+function tegnGraf(hjelpelinje) {
+  const oppgave = oppgaver[gjeldendeIndeks];
+  const storsteY = maksY();
+  const etikettSteg = storsteY <= 12 ? 1 : 5;
+  let svg = "";
+
+  for (let y = 0; y <= storsteY; y++) {
+    const yPos = grafY(y);
+    const erEtikett = y % etikettSteg === 0;
+    svg += `<line x1="${venstreKant}" y1="${yPos}" x2="${hoyreKant}" y2="${yPos}" stroke="${erEtikett ? "#e2ddef" : "#f4f2f9"}"/>`;
+    if (erEtikett) svg += `<text x="${venstreKant - 6}" y="${yPos + 5}" font-size="13" text-anchor="end" fill="#555">${y}</text>`;
+  }
+  for (let x = 0; x <= 5; x++) {
+    const xPos = grafX(x);
+    svg += `<line x1="${xPos}" y1="${toppKant}" x2="${xPos}" y2="${bunnKant}" stroke="#e2ddef"/>`;
+    svg += `<text x="${xPos}" y="${bunnKant + 20}" font-size="14" text-anchor="middle" fill="#555">${x}</text>`;
+  }
+  svg += `<line x1="${venstreKant}" y1="${bunnKant}" x2="${hoyreKant + 10}" y2="${bunnKant}" stroke="#2b2340" stroke-width="2"/>`;
+  svg += `<line x1="${venstreKant}" y1="${bunnKant}" x2="${venstreKant}" y2="${toppKant - 10}" stroke="#2b2340" stroke-width="2"/>`;
+  svg += `<text x="${hoyreKant}" y="${bunnKant + 40}" font-size="14" text-anchor="end" fill="#7c5cd6" font-weight="bold">x</text>`;
+  svg += `<text x="${venstreKant + 8}" y="${toppKant - 4}" font-size="14" fill="#7c5cd6" font-weight="bold">y</text>`;
+
+  // Linje / kurve når tabellen er ferdig
+  if (riktigeRader.length === 6) {
+    let punkter = "";
+    for (let steg = 0; steg <= 50; steg++) {
+      const x = steg / 10;
+      punkter += `${grafX(x)},${grafY(beregnY(oppgave, x))} `;
+    }
+    svg += `<polyline points="${punkter}" fill="none" stroke="#7c5cd6" stroke-width="3"/>`;
+  }
+
+  if (hjelpelinje) {
+    const xPos = grafX(hjelpelinje.x), yPos = grafY(hjelpelinje.y);
+    svg += `<line x1="${xPos}" y1="${bunnKant}" x2="${xPos}" y2="${yPos}" stroke="#f08c00" stroke-width="3" stroke-dasharray="6 5"/>`;
+    svg += `<line x1="${venstreKant}" y1="${yPos}" x2="${xPos}" y2="${yPos}" stroke="#f08c00" stroke-width="3" stroke-dasharray="6 5"/>`;
+    svg += `<circle cx="${xPos}" cy="${yPos}" r="10" fill="none" stroke="#f08c00" stroke-width="3"/>`;
+    svg += `<text x="${venstreKant + 4}" y="${yPos - 6}" font-size="14" fill="#f08c00" font-weight="bold">${hjelpelinje.y}</text>`;
+  }
+
+  riktigeRader.forEach(x => {
+    svg += `<circle cx="${grafX(x)}" cy="${grafY(beregnY(oppgave, x))}" r="7" fill="#2eaa6e"/>`;
+  });
+
+  document.getElementById("graf").innerHTML = svg;
+}
+
+function visHjelpFraX() {
+  const oppgave = oppgaver[gjeldendeIndeks];
+  tegnGraf({ x: oppgave.sporX, y: beregnY(oppgave, oppgave.sporX) });
+  document.getElementById("grafTekst").innerHTML =
+    `Start på <b>${oppgave.sporX}</b> nede på x-aksen.<br>Gå <b>opp</b> til grafen, så <b>bort</b> til y-aksen.`;
+  document.getElementById("graf").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function visHjelpFraY() {
+  const oppgave = oppgaver[gjeldendeIndeks];
+  const y = beregnY(oppgave, oppgave.sporXFraY);
+  tegnGraf({ x: oppgave.sporXFraY, y: y });
+  document.getElementById("grafTekst").innerHTML =
+    `Start på <b>${y}</b> på y-aksen.<br>Gå <b>bort</b> til grafen, så <b>ned</b> til x-aksen.`;
+  document.getElementById("graf").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function sjekkSvar(feltId, tilbakemeldingId, fasit, nesteSteg) {
+  const felt = document.getElementById(feltId);
+  const tilbakemelding = document.getElementById(tilbakemeldingId);
+  if (felt.value.trim() === "" || felt.disabled) return;
+  if (Number(felt.value) === fasit) {
+    felt.className = "riktig"; felt.disabled = true;
+    tilbakemelding.innerHTML = `<span class="gronn">✅ Riktig!</span>`;
+    nesteSteg();
+  } else {
+    felt.className = "feil";
+    tilbakemelding.innerHTML = `<span class="rod">Ikke helt. Se de oransje linjene på grafen – riktig svar er <b>${fasit}</b>.</span>`;
+    if (feltId === "svar1") visHjelpFraX(); else visHjelpFraY();
+  }
+}
+
+function sjekkOmAvlesningFerdig() {
+  if (document.getElementById("svar1").disabled && document.getElementById("svar2").disabled) {
+    document.getElementById("stegFunksjon").classList.remove("skjult");
+  }
+}
+
+document.getElementById("svar1").addEventListener("change", () => {
+  const oppgave = oppgaver[gjeldendeIndeks];
+  sjekkSvar("svar1", "tilbakemelding1", beregnY(oppgave, oppgave.sporX), () => {
+    tegnGraf({ x: oppgave.sporX, y: beregnY(oppgave, oppgave.sporX) });
+    sjekkOmAvlesningFerdig();
+  });
+});
+document.getElementById("svar2").addEventListener("change", () => {
+  const oppgave = oppgaver[gjeldendeIndeks];
+  sjekkSvar("svar2", "tilbakemelding2", oppgave.sporXFraY, () => {
+    tegnGraf({ x: oppgave.sporXFraY, y: beregnY(oppgave, oppgave.sporXFraY) });
+    sjekkOmAvlesningFerdig();
+  });
+});
+document.getElementById("svarFunksjon").addEventListener("change", () => {
+  const oppgave = oppgaver[gjeldendeIndeks];
+  const felt = document.getElementById("svarFunksjon");
+  const tilbakemelding = document.getElementById("tilbakemeldingFunksjon");
+  if (felt.value.trim() === "" || felt.disabled) return;
+  const fasit = beregnY(oppgave, 10);
+  if (Number(felt.value) === fasit) {
+    felt.className = "riktig"; felt.disabled = true;
+    tilbakemelding.innerHTML = `<span class="gronn">✅ Riktig! ${innsattUttrykk(oppgave, 10)} = ${fasit}</span>`;
+    oppgaveFerdig();
+  } else {
+    felt.className = "feil";
+    const tips = {
+      pluss: `Tips: Start på 10 og tell ${oppgave.b} videre.`,
+      ganger: `Tips: ${oppgave.a} · 10 – sett en 0 bak ${oppgave.a}.`,
+      gangerPluss: `Tips: Regn først ${oppgave.a} · 10 = ${oppgave.a * 10}. Legg så til ${oppgave.b}.`,
+      kvadrat: "Tips: 10 · 10 – det er ti tiere."
+    };
+    tilbakemelding.innerHTML = `<span class="rod">${tips[oppgave.type]}<br>Riktig svar: ${innsattUttrykk(oppgave, 10)} = <b>${fasit}</b></span>`;
+  }
+});
+
+function oppgaveFerdig() {
+  if (!ferdigeOppgaver.includes(gjeldendeIndeks)) ferdigeOppgaver.push(gjeldendeIndeks);
+  lagreFremdrift();
+  tegnFremdrift();
+  const antallFerdige = ferdigeOppgaver.length;
+  document.getElementById("ferdigTekst").innerHTML = antallFerdige === oppgaver.length
+    ? "<b>Alle 10 oppgaver er ferdige! Kjempebra! 🏆</b>"
+    : `Bra jobba! Du har klart <b>${antallFerdige} av ${oppgaver.length}</b> oppgaver.`;
+  document.getElementById("nesteKnapp").textContent =
+    gjeldendeIndeks === oppgaver.length - 1 ? "Start på nytt ↺" : "Neste oppgave ➜";
+  document.getElementById("stegFerdig").classList.remove("skjult");
+  document.getElementById("stegFerdig").scrollIntoView({ behavior: "smooth" });
+}
+
+function visLosning() {
+  const oppgave = oppgaver[gjeldendeIndeks];
+  let rader = "";
+  for (let x = 0; x <= 5; x++) {
+    rader += `<tr><td class="xverdi">${x}</td><td>${innsattUttrykk(oppgave, x)}</td><td><b>${beregnY(oppgave, x)}</b></td></tr>`;
+  }
+  const yFraX = beregnY(oppgave, oppgave.sporX);
+  const yForB = beregnY(oppgave, oppgave.sporXFraY);
+  document.getElementById("losning").innerHTML = `
+    <h2>Løsning: ${funksjonsuttrykk(oppgave)}</h2>
+    <table><thead><tr><th>x</th><th>Utregning</th><th>y</th></tr></thead><tbody>${rader}</tbody></table>
+    <p><b>a)</b> x = ${oppgave.sporX}: gå opp fra ${oppgave.sporX} til grafen og bort til y-aksen → <b>y = ${yFraX}</b></p>
+    <p><b>b)</b> y = ${yForB}: gå bort fra ${yForB} til grafen og ned til x-aksen → <b>x = ${oppgave.sporXFraY}</b></p>
+    <p><b>3)</b> ${innsattUttrykk(oppgave, 10)} = <b>${beregnY(oppgave, 10)}</b></p>`;
+  document.getElementById("losning").classList.remove("skjult");
+  document.getElementById("losning").scrollIntoView({ behavior: "smooth" });
+}
+
+function nesteOppgave() {
+  document.getElementById("losning").classList.add("skjult");
+  startOppgave((gjeldendeIndeks + 1) % oppgaver.length);
+}
+
+const forsteUferdige = oppgaver.findIndex((_, indeks) => !ferdigeOppgaver.includes(indeks));
+startOppgave(forsteUferdige === -1 ? 0 : forsteUferdige);
+</script>
+</body>
+</html>
